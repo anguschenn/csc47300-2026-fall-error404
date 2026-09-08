@@ -41,3 +41,20 @@ By uniting operational transit feeds with community-driven collaboration, MetroP
 * A community reporting system allowing riders to post immediate updates regarding platform conditions, unexpected delays, broken turnstiles, or safety concerns.
 * Structured categorization tags (e.g., *Late Train*, *Station Hazard*, *Elevator Out of Service*, *Safety Alert*) for fast scanning.
 * Community verification and upvoting system so fellow riders can vouch for active reports and confirm when an issue has cleared.
+
+---
+
+## 🛠️ Architecture & Tech Stack
+
+This project is built as a decoupled **Single Page Application (SPA)** with **Client-Side Rendering (CSR)**, splitting UI presentation from backend service logic:
+
+* **Client-Side Frontend:**
+  * **Framework:** React.js (via Vite)
+  * **Deployment/Hosting:** Vercel
+
+* **Backend REST API:**
+  * **Framework:** Python (FastAPI)
+  * **Deployment/Hosting:** Render
+
+* **Database & Storage:**
+  * **Database:** Cloud PostgreSQL (managed via Supabase)
