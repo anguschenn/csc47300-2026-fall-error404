@@ -1,0 +1,50 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-h);
+}
+
+.subtitle {
+  color: var(--text);
+  font-size: 1.1rem;
+  margin: 0 0 2rem 0;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+}
+
+.status-badge.online {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.offline {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
