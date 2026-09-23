@@ -140,3 +140,92 @@ This project is built as a decoupled **Single Page Application (SPA)** with **Cl
 
 * **Database & Storage:**
   * **Database:** Cloud PostgreSQL (managed via Supabase)
+
+---
+
+## 💻 Local Development Setup
+
+Follow these steps to run both the frontend and backend locally on your machine.
+
+### Prerequisites
+* **Node.js** (v18+ recommended) & `npm`
+* **Python** (v3.10+ recommended)
+* **Git**
+
+---
+
+### 1. Backend Setup (FastAPI)
+
+1. Open a terminal and navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+
+2. Create and activate a Python virtual environment:
+   * **Windows (PowerShell):**
+     ```powershell
+     python -m venv venv
+     .\venv\Scripts\Activate.ps1
+     ```
+   * **Windows (CMD):**
+     ```cmd
+     python -m venv venv
+     .\venv\Scripts\activate.bat
+     ```
+   * **macOS / Linux:**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Create your local `.env` file from the example:
+   * **Windows:**
+     ```powershell
+     copy .env.example .env
+     ```
+   * **macOS / Linux:**
+     ```bash
+     cp .env.example .env
+     ```
+   *(Update `DATABASE_URL` with the team's Supabase credentials if database access is needed)*
+
+5. Start the FastAPI development server:
+   ```bash
+   uvicorn app.main:app --reload --port 8000
+   ```
+   The backend API will be available at [http://localhost:8000](http://localhost:8000). Interactive Swagger API docs are at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+---
+
+### 2. Frontend Setup (React + Vite)
+
+1. Open a **second terminal** and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create your local `.env.local` file from the example:
+   * **Windows:**
+     ```powershell
+     copy .env.example .env.local
+     ```
+   * **macOS / Linux:**
+     ```bash
+     cp .env.example .env.local
+     ```
+
+4. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   The frontend app will be running at [http://localhost:5173](http://localhost:5173).
