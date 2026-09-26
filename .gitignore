@@ -20,6 +20,7 @@ dist/
 dist-ssr/
 build/
 *.local
+*.tsbuildinfo
 
 # Logs
 npm-debug.log*

@@ -131,7 +131,7 @@ By uniting operational transit feeds with community-driven collaboration, MetroP
 This project is built as a decoupled **Single Page Application (SPA)** with **Client-Side Rendering (CSR)**, splitting UI presentation from backend service logic:
 
 * **Client-Side Frontend:**
-  * **Framework:** React.js (via Vite)
+  * **Framework:** React.js + TypeScript (via Vite)
   * **Deployment/Hosting:** Vercel
 
 * **Backend REST API:**

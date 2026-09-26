@@ -1,21 +1,27 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+interface ConnectionStatus {
+  loading: boolean
+  connected: boolean
+  message: string
+}
+
 function App() {
-  const [status, setStatus] = useState({
+  const [status, setStatus] = useState<ConnectionStatus>({
     loading: true,
     connected: false,
     message: 'Checking backend connection...'
   })
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+    const apiUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
     fetch(`${apiUrl}/api/health`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.json()
       })
-      .then((data) => {
+      .then((data: { message?: string }) => {
         setStatus({
           loading: false,
           connected: true,
