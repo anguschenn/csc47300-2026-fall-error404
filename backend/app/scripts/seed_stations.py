@@ -1,10 +1,12 @@
 import sys
+import time
 import httpx
 from sqlalchemy.orm import Session
 from app.database import engine, SessionLocal, Base
 from app.models.station import Station
 
 NY_OPEN_DATA_STATIONS_URL = "https://data.ny.gov/resource/39hk-dx4f.json?$limit=1000"
+MIN_STATIONS_THRESHOLD = 50  # Safety circuit breaker to prevent wiping database on bad API payloads
 
 BOROUGH_MAP = {
     "M": "Manhattan",
@@ -15,13 +17,57 @@ BOROUGH_MAP = {
     "SI": "Staten Island",
 }
 
+def fetch_with_retry(url: str, max_attempts: int = 3, timeout: float = 30.0) -> list:
+    """
+    Fetches JSON array from external API with exponential backoff retries.
+    """
+    last_err = None
+    with httpx.Client(timeout=timeout) as client:
+        for attempt in range(1, max_attempts + 1):
+            try:
+                resp = client.get(url)
+                resp.raise_for_status()
+                data = resp.json()
+                if not isinstance(data, list):
+                    raise ValueError(f"Expected JSON array, received: {type(data).__name__}")
+                return data
+            except Exception as err:
+                last_err = err
+                if attempt < max_attempts:
+                    delay = attempt * 2.0
+                    print(f"[WARN] Attempt {attempt} failed ({err}). Retrying in {delay}s...")
+                    time.sleep(delay)
+
+    raise RuntimeError(f"Failed to fetch data from NYC Open Data after {max_attempts} attempts: {last_err}")
+
 def seed_stations(db: Session = None, recreate_table: bool = False):
     """
     Ingests official NYC Subway station metadata from New York State Open Data
     and upserts them into the Supabase PostgreSQL database.
 
-    Can be run as an initial database seed or periodically as a sync task.
+    Fault-tolerant: Verifies and validates external data in memory BEFORE touching the database.
     """
+    # 1. Fetch & Validate from External API first (Fetch first, mutate second)
+    print("1. Fetching official MTA stations from NY State Open Data...")
+    try:
+        raw_stations = fetch_with_retry(NY_OPEN_DATA_STATIONS_URL)
+    except Exception as fetch_err:
+        print(f"[ERROR] Sync aborted. Could not fetch stations: {fetch_err}")
+        print("[INFO] Existing database records were left untouched.")
+        raise fetch_err
+
+    # 2. Circuit Breaker validation
+    if len(raw_stations) < MIN_STATIONS_THRESHOLD:
+        err_msg = (
+            f"[ERROR] API returned only {len(raw_stations)} stations (below safety threshold of {MIN_STATIONS_THRESHOLD}). "
+            "Aborting sync to prevent data loss or corruption."
+        )
+        print(err_msg)
+        raise ValueError(err_msg)
+
+    print(f"Validated {len(raw_stations)} station records. Preparing database transaction...")
+
+    # 3. Database mutation only after data is 100% verified
     should_close_db = False
     if db is None:
         db = SessionLocal()
@@ -34,14 +80,6 @@ def seed_stations(db: Session = None, recreate_table: bool = False):
             Base.metadata.create_all(bind=engine)
         else:
             Base.metadata.create_all(bind=engine)
-
-        print(f"Fetching official MTA stations from Open Data...")
-        with httpx.Client(timeout=30.0) as client:
-            resp = client.get(NY_OPEN_DATA_STATIONS_URL)
-            resp.raise_for_status()
-            raw_stations = resp.json()
-
-        print(f"Fetched {len(raw_stations)} station records. Synchronizing database...")
 
         upserted_count = 0
         for item in raw_stations:
@@ -94,11 +132,11 @@ def seed_stations(db: Session = None, recreate_table: bool = False):
             upserted_count += 1
 
         db.commit()
-        print(f"Successfully synchronized {upserted_count} MTA subway stations to Supabase.")
+        print(f"[SUCCESS] Synchronized {upserted_count} MTA subway stations into Supabase.")
 
     except Exception as e:
         db.rollback()
-        print(f"Error during station synchronization: {e}")
+        print(f"[ERROR] Database transaction failed, rolling back changes: {e}")
         raise e
     finally:
         if should_close_db:

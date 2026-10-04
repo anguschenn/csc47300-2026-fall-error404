@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
 from app.api.v1.stations import router as stations_router
+from app.api.v1.subway_lines import router as subway_lines_router
 
 app = FastAPI(
     title="MetroPulse NYC API",
@@ -21,6 +22,7 @@ app.add_middleware(
 
 # Register modular API routers
 app.include_router(stations_router, prefix="/api/v1/stations", tags=["Stations"])
+app.include_router(subway_lines_router, prefix="/api/v1/subway-lines", tags=["Subway Lines"])
 
 @app.get("/api/health", tags=["Health"])
 def health_check():

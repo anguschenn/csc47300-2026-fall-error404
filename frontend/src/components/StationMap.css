@@ -1,0 +1,86 @@
+.station-map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* remove browser focus ring on clicked svg markers and canvas */
+.leaflet-container :focus,
+.leaflet-container :focus-visible,
+.leaflet-interactive:focus,
+.leaflet-interactive:focus-visible,
+path.leaflet-interactive:focus {
+  outline: none;
+}
+
+.station-map-container {
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #f1f5f9;
+}
+
+.tile-error-banner {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+
+.station-popup {
+  font-family: system-ui, sans-serif;
+  min-width: 150px;
+}
+
+.station-popup-title {
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.station-popup-borough {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.station-badges-row {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.station-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.station-ada-accessible {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.subway-line-tooltip-name {
+  font-size: 11px;
+  color: #64748b;
+}
