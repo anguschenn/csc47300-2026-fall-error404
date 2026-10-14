@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { StationMap } from './components/StationMap'
+import { AuthModal } from './components/AuthModal'
+import { ProfileModal } from './components/ProfileModal'
+import { useAuth } from './context/useAuth'
 import type { Station } from './types/station'
 import './App.css'
 
@@ -11,6 +14,8 @@ interface ConnectionStatus {
 
 function App() {
   const apiUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
+  const { user, profile } = useAuth()
+
   const [status, setStatus] = useState<ConnectionStatus>({
     loading: true,
     connected: false,
@@ -18,6 +23,8 @@ function App() {
   })
   const [stations, setStations] = useState<Station[]>([])
   const [loadingStations, setLoadingStations] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [profileModalOpen, setProfileModalOpen] = useState(false)
 
   useEffect(() => {
     fetch(`${apiUrl}/api/health`)
@@ -53,12 +60,76 @@ function App() {
       .finally(() => {
         setLoadingStations(false)
       })
-  }, [])
+  }, [apiUrl])
+
+  // Look up station names for commuter preferences if set
+  const homeStation = stations.find((s) => s.id === profile?.home_station_id)
+  const workStation = stations.find((s) => s.id === profile?.work_station_id)
+
+  const userDisplayName =
+    profile?.display_name ||
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split('@')[0] ||
+    'Commuter'
 
   return (
     <div className="container">
-      <h1>MetroPulse NYC 🚇</h1>
-      <p className="subtitle">Real-time transit tracker & commuter safety network.</p>
+      <header className="app-header">
+        <div className="brand-block">
+          <div className="title-row">
+            <h1>MetroPulse NYC 🚇</h1>
+          </div>
+          <p className="subtitle">Real-time transit tracker & commuter safety network.</p>
+        </div>
+
+        <div className="header-actions">
+          {user ? (
+            <button
+              className="user-profile-btn"
+              onClick={() => setProfileModalOpen(true)}
+              title="Manage your profile & commute stations"
+            >
+              <div className="user-profile-avatar">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt={userDisplayName} />
+                ) : (
+                  <span>{userDisplayName.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <span className="user-profile-name">{userDisplayName}</span>
+            </button>
+          ) : (
+            <button className="sign-in-btn" onClick={() => setAuthModalOpen(true)}>
+              Sign In
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Commuter preferences strip when logged in */}
+      {user && (homeStation || workStation) && (
+        <div className="commuter-strip">
+          {homeStation && (
+            <span className="commute-tag">
+              🏠 <strong>Home:</strong> {homeStation.name}
+              {homeStation.lines?.length ? ` (${homeStation.lines.join(', ')})` : ''}
+            </span>
+          )}
+          {workStation && (
+            <span className="commute-tag">
+              💼 <strong>Work:</strong> {workStation.name}
+              {workStation.lines?.length ? ` (${workStation.lines.join(', ')})` : ''}
+            </span>
+          )}
+          <button
+            className="commute-edit-link"
+            onClick={() => setProfileModalOpen(true)}
+          >
+            Edit
+          </button>
+        </div>
+      )}
 
       <div className="status-row">
         <div className={`status-badge ${status.connected ? 'online' : 'offline'}`}>
@@ -81,6 +152,13 @@ function App() {
       <div className="map-wrapper">
         <StationMap stations={stations} apiUrl={apiUrl} />
       </div>
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        stations={stations}
+      />
     </div>
   )
 }
