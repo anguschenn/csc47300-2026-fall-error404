@@ -17,6 +17,8 @@
   border-radius: 16px;
   width: 100%;
   max-width: 440px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   padding: 2rem 2.2rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   text-align: left;
@@ -234,4 +236,54 @@
   background: rgba(239, 68, 68, 0.08);
   border-color: rgba(239, 68, 68, 0.3);
   color: #dc2626;
+}
+
+.trust-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  margin-bottom: 1.4rem;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+}
+
+.trust-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.trust-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text, #6b6375);
+}
+
+.trust-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--code-bg, #f4f3ec);
+  overflow: hidden;
+}
+
+.trust-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.trust-progress-label {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.8rem;
+  color: var(--text, #6b6375);
+}
+
+.trust-section-status {
+  margin: 0 0 1.4rem 0;
+  font-size: 0.85rem;
+  color: var(--text, #6b6375);
 }

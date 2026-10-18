@@ -3,6 +3,11 @@ import { useAuth } from '../context/useAuth'
 import type { Station } from '../types/station'
 import type { Profile, ProfileUpdate } from '../types/profile'
 import type { User } from '@supabase/supabase-js'
+import type { TrustSummary } from '../types/trust'
+import { getTrustSummary, getTierProgress } from '../lib/trust'
+import { getUserStats } from '../services/trustService'
+import { TrustBadge } from './TrustBadge'
+import { BadgeList } from './BadgeList'
 import './ProfileModal.css'
 
 interface ProfileModalProps {
@@ -16,6 +21,65 @@ interface ProfileModalContentProps {
   profile: Profile | null
   stations: Station[]
   onClose: () => void
+}
+
+function ProfileTrustSection({ userId }: { userId: string }) {
+  const [summary, setSummary] = useState<TrustSummary | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    getUserStats(userId)
+      .then((stats) => {
+        if (!cancelled) setSummary(getTrustSummary(stats))
+      })
+      .catch(() => {
+        if (!cancelled) setError(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  if (error) {
+    return <p className="trust-section-status">Could not load trust rating.</p>
+  }
+
+  if (!summary) {
+    return <p className="trust-section-status">Loading trust rating...</p>
+  }
+
+  const progressPct = Math.round(getTierProgress(summary.score) * 100)
+
+  return (
+    <section className="trust-section" aria-label="Community trust rating">
+      <div className="trust-section-header">
+        <span className="trust-section-title">Community Trust</span>
+        <TrustBadge tier={summary.tier} score={summary.score} />
+      </div>
+
+      <div
+        className="trust-progress"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progressPct}
+      >
+        <div
+          className="trust-progress-fill"
+          style={{ width: `${progressPct}%`, background: summary.tier.color }}
+        />
+      </div>
+      <p className="trust-progress-label">
+        {summary.nextTier
+          ? `${summary.pointsToNextTier} points to ${summary.nextTier.label}`
+          : 'Highest tier reached'}
+      </p>
+
+      <span className="trust-section-title">Badges</span>
+      <BadgeList earned={summary.badges} />
+    </section>
+  )
 }
 
 function ProfileModalContent({ user, profile, stations, onClose }: ProfileModalContentProps) {
@@ -219,6 +283,8 @@ function ProfileModalContent({ user, profile, stations, onClose }: ProfileModalC
           </div>
         </div>
       </div>
+
+      {user && <ProfileTrustSection userId={user.id} />}
 
       {message && (
         <div className={`profile-banner ${message.isError ? 'error' : 'success'}`}>

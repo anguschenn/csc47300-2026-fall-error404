@@ -1,0 +1,36 @@
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.trust-badge--md {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.trust-badge--sm {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+}
+
+/* MTA yellow is unreadable with white text */
+.trust-badge--pillar {
+  color: #08060d;
+}
+
+.trust-badge-score {
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+.trust-badge--pillar .trust-badge-score {
+  background: rgba(0, 0, 0, 0.12);
+}

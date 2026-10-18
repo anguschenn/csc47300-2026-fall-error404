@@ -1,0 +1,49 @@
+.badge-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.badge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.55rem 0.3rem;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--code-bg, #f9fafb);
+  text-align: center;
+  cursor: default;
+}
+
+.badge-item.locked {
+  opacity: 0.4;
+  filter: grayscale(1);
+}
+
+.badge-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.badge-label {
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--text-h, #08060d);
+}
+
+.badge-list-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text, #6b6375);
+}
+
+@media (max-width: 400px) {
+  .badge-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
