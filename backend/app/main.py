@@ -6,6 +6,7 @@ from app.database import get_db
 from app.api.v1.stations import router as stations_router
 from app.api.v1.subway_lines import router as subway_lines_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.commute_trips import router as commute_trips_router
 
 app = FastAPI(
     title="MetroPulse NYC API",
@@ -25,6 +26,7 @@ app.add_middleware(
 app.include_router(stations_router, prefix="/api/v1/stations", tags=["Stations"])
 app.include_router(subway_lines_router, prefix="/api/v1/subway-lines", tags=["Subway Lines"])
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth & Profiles"])
+app.include_router(commute_trips_router, prefix="/api/v1/commute-trips", tags=["SafeCommute"])
 
 @app.get("/api/health", tags=["Health"])
 def health_check():

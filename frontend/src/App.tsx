@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
+import { RequireAuth } from './components/RequireAuth'
+import { SafeCommutePage } from './pages/SafeCommutePage'
 import { StationMap } from './components/StationMap'
 import { AuthModal } from './components/AuthModal'
 import { ProfileModal } from './components/ProfileModal'
@@ -115,7 +118,15 @@ function App() {
         </div>
       </header>
 
+      <nav className="app-tabs" aria-label="Main navigation">
+        <NavLink to="/" end>Transit map</NavLink>
+        {user && <NavLink to="/safe-commute">SafeCommute</NavLink>}
+      </nav>
+
       <Routes>
+        <Route path="/safe-commute" element={
+          <RequireAuth><SafeCommutePage key={user?.id} stations={stations} /></RequireAuth>
+        } />
         <Route path="/stations/:stationId" element={<StationPage stations={stations} />} />
         <Route
           path="*"

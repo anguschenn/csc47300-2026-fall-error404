@@ -1,0 +1,51 @@
+# SafeCommute setup
+
+SafeCommute uses the existing Supabase login and PostgreSQL connection. The new
+API lives in `app/api/v1/commute_trips.py`; models and schemas follow the existing
+backend structure. The frontend page is `frontend/src/pages/SafeCommutePage.tsx`.
+
+From the `backend` directory, with the existing `.env` configured, run once:
+
+```powershell
+.\venv\Scripts\python.exe -m app.scripts.setup_safe_commute
+```
+
+This creates only `commute_trips` and `commute_trip_members`. Existing `stations`
+and `profiles` tables must already exist. Repeating the command is safe; it does
+not delete or recreate existing tables. Row level security blocks direct access
+through Supabase's public client. Use the backend's existing privileged database
+connection (table owner or a role with BYPASSRLS); all HTTP access is checked by
+the existing Supabase bearer-token dependency.
+
+Start the backend and frontend as usual:
+
+```powershell
+# Terminal 1, from backend
+.\venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
+
+# Terminal 2, from frontend
+npm.cmd run dev
+```
+
+Sign in and open the SafeCommute tab. Select two different stations and a future
+meetup window, then publish. The creator automatically joins the trip. Other
+signed-in users see the published trip and can join or leave. The creator may
+also leave and rejoin; the card still identifies them as the original creator.
+Names are resolved from public profiles; the client cannot set another creator
+or add someone else as a participant. Cards show times in New York time; form
+times use the device's local time zone and are sent to the API as UTC instants.
+
+Each trip's participants form its commute group. The feed refreshes every 15
+seconds and offers a manual refresh button. Trips disappear from the upcoming
+feed once the meetup window ends; records are retained in the database.
+
+Run the isolated API tests without modifying the configured database:
+
+```powershell
+.\venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Manual check: publish as one user, join as a second user in another browser,
+refresh the first user's feed, then leave as the second user. Confirm the member
+list updates and the button switches between Join trip and Leave trip. Sign out
+and confirm the tab disappears and `/safe-commute` redirects to the map.
