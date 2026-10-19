@@ -16,6 +16,8 @@ class CommuteTrip(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     creator_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id"), nullable=False)
+    # Nullable only for trips published before line selection was introduced.
+    train_line = Column(String(16), nullable=True)
     departure_station_id = Column(String, ForeignKey("stations.id"), nullable=False)
     destination_station_id = Column(String, ForeignKey("stations.id"), nullable=False)
     meetup_at = Column(DateTime(timezone=True), nullable=False, index=True)

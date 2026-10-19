@@ -40,6 +40,7 @@ def trip_response(trip):
     return {
         "id": trip.id,
         "creator": person(trip.creator),
+        "train_line": trip.train_line,
         "departure_station": trip.departure_station,
         "destination_station": trip.destination_station,
         "meetup_at": trip.meetup_at,
@@ -73,8 +74,11 @@ def publish_trip(
     db: Session = Depends(get_db),
 ):
     for station_id in (data.departure_station_id, data.destination_station_id):
-        if not db.get(Station, station_id):
+        station = db.get(Station, station_id)
+        if not station:
             raise HTTPException(400, "One of the selected stations no longer exists.")
+        if data.train_line not in {line.strip().upper() for line in (station.lines or [])}:
+            raise HTTPException(400, f"{station.name} is not served by the {data.train_line} train. Choose both stations on the selected line.")
     profile = commuter_profile(current_user, db)
     trip = CommuteTrip(creator_id=profile.id, **data.model_dump())
     db.add(trip)

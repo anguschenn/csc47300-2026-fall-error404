@@ -1,10 +1,12 @@
 """API checks with isolated in-memory storage; no Supabase data is accessed."""
 import unittest
+import json
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import JSON, create_engine, event, text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Session
@@ -38,16 +40,20 @@ event.listen(CommuteTrip, "refresh", restore_timezone)
 
 class SafeCommuteTests(unittest.TestCase):
     def setUp(self):
+        # PostgreSQL arrays use JSON in the isolated SQLite tests so line membership is real data.
+        array_adapter = patch.object(Station.__table__.c.lines, "type", JSON())
+        array_adapter.start()
+        self.addCleanup(array_adapter.stop)
         self.engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         with self.engine.begin() as connection:
             connection.execute(text("PRAGMA foreign_keys=ON"))
             for table in (Station.__table__, Profile.__table__, CommuteTrip.__table__, CommuteTripMember.__table__):
                 table.create(connection)
-            for station_id, name in (("A", "First station"), ("B", "Second station")):
+            for station_id, name, lines in (("A", "First station", ["4", "6"]), ("B", "Second station", ["6"]), ("C", "Other line station", ["4"])):
                 connection.execute(text(
                     "INSERT INTO stations (id, name, borough, lines, latitude, longitude, ada) "
-                    "VALUES (:id, :name, 'Manhattan', '[]', 40.7, -74, 0)"
-                ), {"id": station_id, "name": name})
+                    "VALUES (:id, :name, 'Manhattan', :lines, 40.7, -74, 0)"
+                ), {"id": station_id, "name": name, "lines": json.dumps(lines)})
         self.creator = CurrentUser(id=str(uuid4()), email="creator@example.com", user_metadata={"display_name": "Alex"})
         self.rider = CurrentUser(id=str(uuid4()), email="rider@example.com", user_metadata={"display_name": "Sam"})
         self.current_user = self.creator
@@ -61,6 +67,7 @@ class SafeCommuteTests(unittest.TestCase):
         self.client = TestClient(app)
         start = datetime.now(timezone.utc) + timedelta(hours=2)
         self.payload = {
+            "train_line": "6",
             "departure_station_id": "A", "destination_station_id": "B",
             "meetup_at": start.isoformat(), "meetup_end_at": (start + timedelta(minutes=15)).isoformat(),
         }
@@ -79,15 +86,18 @@ class SafeCommuteTests(unittest.TestCase):
         trip = self.publish()
         self.assertEqual(trip["creator"], {"id": self.creator.id, "display_name": "Alex"})
         self.assertEqual(trip["departure_station"]["name"], "First station")
+        self.assertEqual(trip["train_line"], "6")
         self.assertEqual([person["id"] for person in trip["participants"]], [self.creator.id])
         self.current_user = self.rider
         listed = self.client.get("/api/v1/commute-trips").json()
         self.assertEqual(listed[0]["id"], trip["id"])
+        self.assertEqual(listed[0]["train_line"], "6")
         endpoint = f'/api/v1/commute-trips/{trip["id"]}/membership'
         for _ in range(2):
             joined = self.client.put(endpoint)
             self.assertEqual(joined.status_code, 200, joined.text)
             self.assertEqual(len(joined.json()["participants"]), 2)
+            self.assertEqual(joined.json()["train_line"], "6")
             self.assertIn({"id": self.rider.id, "display_name": "Sam"}, joined.json()["participants"])
         for _ in range(2):
             left = self.client.delete(endpoint)
@@ -123,6 +133,31 @@ class SafeCommuteTests(unittest.TestCase):
 
     def test_unknown_trip_returns_404(self):
         self.assertEqual(self.client.put(f"/api/v1/commute-trips/{uuid4()}/membership").status_code, 404)
+
+    def test_rejects_stations_outside_chosen_line(self):
+        for changes in ({"destination_station_id": "C"}, {"train_line": "4"}, {"train_line": "NOT-A-LINE"}):
+            with self.subTest(changes=changes):
+                response = self.client.post("/api/v1/commute-trips", json={**self.payload, **changes})
+                self.assertEqual(response.status_code, 400, response.text)
+        self.assertEqual(self.client.get("/api/v1/commute-trips").json(), [])
+
+    def test_line_is_required_and_normalized(self):
+        missing = {key: value for key, value in self.payload.items() if key != "train_line"}
+        self.assertEqual(self.client.post("/api/v1/commute-trips", json=missing).status_code, 422)
+        self.assertEqual(self.client.post("/api/v1/commute-trips", json={**self.payload, "train_line": " "}).status_code, 422)
+        response = self.client.post("/api/v1/commute-trips", json={**self.payload, "train_line": " 6 "})
+        self.assertEqual(response.status_code, 201, response.text)
+        self.assertEqual(response.json()["train_line"], "6")
+
+    def test_old_trips_without_a_chosen_line_remain_visible(self):
+        trip = self.publish()
+        with Session(self.engine) as session:
+            stored = session.get(CommuteTrip, UUID(trip["id"]))
+            stored.train_line = None
+            session.commit()
+        response = self.client.get("/api/v1/commute-trips")
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIsNone(response.json()[0]["train_line"])
 
     def test_all_endpoints_require_login(self):
         del app.dependency_overrides[get_current_user]

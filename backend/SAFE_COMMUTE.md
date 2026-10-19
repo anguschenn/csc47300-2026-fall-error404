@@ -27,13 +27,24 @@ Start the backend and frontend as usual:
 npm.cmd run dev
 ```
 
-Sign in and open the SafeCommute tab. Select two different stations and a future
+Sign in and open the SafeCommute tab. Select a train line, then two different
+stations served by that line and a future
 meetup window, then publish. The creator automatically joins the trip. Other
 signed-in users see the published trip and can join or leave. The creator may
 also leave and rejoin; the card still identifies them as the original creator.
 Names are resolved from public profiles; the client cannot set another creator
 or add someone else as a participant. Cards show times in New York time; form
 times use the device's local time zone and are sent to the API as UTC instants.
+
+Changing the train line clears both station selections. The API also checks that
+both stations serve the chosen line. Published cards show a colored subway bullet
+and the chosen line alongside the station names. Station membership uses the
+existing station data; it does not guarantee a particular train's stopping pattern
+or service at the requested time.
+
+For an existing database, run the setup command again before restarting FastAPI.
+It adds only the nullable `train_line` column to `commute_trips`. Earlier trips
+remain visible with a line-not-specified note; no line is guessed for them.
 
 Each trip's participants form its commute group. The feed refreshes every 15
 seconds and offers a manual refresh button. Trips disappear from the upcoming

@@ -31,3 +31,11 @@
 .sc-error { border: 1px solid #c74c4c; color: var(--text-h); padding: .85rem; margin-top: 1rem; border-radius: 8px; }
 .sc-notice { min-height: 1.5rem; margin: .6rem 0; color: var(--text-h); font-size: .85rem; }
 @media (max-width: 760px) { .sc-layout { grid-template-columns: 1fr; } .app-tabs a { padding: .5rem .65rem; } }
+
+.sc-train-bullet { width: 44px; height: 44px; flex-shrink: 0; }
+.sc-selected-line, .sc-card-line { display: flex; align-items: center; gap: .65rem; color: var(--text-h); }
+.sc-selected-line { font-size: .8rem; margin: .35rem 0; }
+.sc-selected-line .sc-train-bullet { width: 32px; height: 32px; }
+.sc-card-line { margin-top: 1rem; }
+.sc-legacy-line { font-size: .75rem; margin-top: .75rem; }
+.sc-publish select:disabled { opacity: .6; cursor: not-allowed; }

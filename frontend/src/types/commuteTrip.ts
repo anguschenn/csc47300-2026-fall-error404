@@ -6,6 +6,7 @@ export interface CommutePerson {
 export interface CommuteTrip {
   id: string
   creator: CommutePerson
+  train_line: string | null
   departure_station: { id: string; name: string }
   destination_station: { id: string; name: string }
   meetup_at: string
@@ -14,6 +15,7 @@ export interface CommuteTrip {
 }
 
 export interface CommuteTripCreate {
+  train_line: string
   departure_station_id: string
   destination_station_id: string
   meetup_at: string
