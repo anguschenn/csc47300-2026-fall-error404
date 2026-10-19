@@ -169,6 +169,7 @@ export function StationMap({ stations, apiUrl, onStationClick }: StationMapProps
           <span class="station-popup-borough">${station.borough}</span>
           <div class="station-badges-row">${linesBadges}</div>
           ${adaHtml}
+          ${onStationClick ? `<a class="station-popup-link" href="/stations/${station.id}">Live arrivals &amp; alerts →</a>` : ''}
         </div>
       `
 
@@ -185,7 +186,16 @@ export function StationMap({ stations, apiUrl, onStationClick }: StationMapProps
       })
 
       if (onStationClick) {
-        hitTarget.on('click', () => onStationClick(station))
+        hitTarget.on('popupopen', (e) => {
+          const link = e.popup.getElement()?.querySelector<HTMLAnchorElement>('.station-popup-link')
+          if (!link) return
+          link.onclick = (ev) => {
+            // let cmd/ctrl/shift/middle-click open a new tab natively
+            if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return
+            ev.preventDefault()
+            onStationClick(station)
+          }
+        })
       }
 
       marker.addTo(markersLayer)

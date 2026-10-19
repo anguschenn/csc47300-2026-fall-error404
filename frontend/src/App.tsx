@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, useNavigate } from 'react-router-dom'
 import { StationMap } from './components/StationMap'
 import { AuthModal } from './components/AuthModal'
 import { ProfileModal } from './components/ProfileModal'
+import { StationPage } from './pages/StationPage'
 import { useAuth } from './context/useAuth'
 import type { Station } from './types/station'
 import './App.css'
@@ -15,6 +17,7 @@ interface ConnectionStatus {
 function App() {
   const apiUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
   const { user, profile } = useAuth()
+  const navigate = useNavigate()
 
   const [status, setStatus] = useState<ConnectionStatus>({
     loading: true,
@@ -62,6 +65,11 @@ function App() {
       })
   }, [apiUrl])
 
+  const openStation = useCallback(
+    (station: Station) => navigate(`/stations/${station.id}`),
+    [navigate]
+  )
+
   // Look up station names for commuter preferences if set
   const homeStation = stations.find((s) => s.id === profile?.home_station_id)
   const workStation = stations.find((s) => s.id === profile?.work_station_id)
@@ -107,51 +115,61 @@ function App() {
         </div>
       </header>
 
-      {/* Commuter preferences strip when logged in */}
-      {user && (homeStation || workStation) && (
-        <div className="commuter-strip">
-          {homeStation && (
-            <span className="commute-tag">
-              🏠 <strong>Home:</strong> {homeStation.name}
-              {homeStation.lines?.length ? ` (${homeStation.lines.join(', ')})` : ''}
-            </span>
-          )}
-          {workStation && (
-            <span className="commute-tag">
-              💼 <strong>Work:</strong> {workStation.name}
-              {workStation.lines?.length ? ` (${workStation.lines.join(', ')})` : ''}
-            </span>
-          )}
-          <button
-            className="commute-edit-link"
-            onClick={() => setProfileModalOpen(true)}
-          >
-            Edit
-          </button>
-        </div>
-      )}
+      <Routes>
+        <Route path="/stations/:stationId" element={<StationPage stations={stations} />} />
+        <Route
+          path="*"
+          element={
+            <>
+              {/* Commuter preferences strip when logged in */}
+              {user && (homeStation || workStation) && (
+                <div className="commuter-strip">
+                  {homeStation && (
+                    <span className="commute-tag">
+                      🏠 <strong>Home:</strong> {homeStation.name}
+                      {homeStation.lines?.length ? ` (${homeStation.lines.join(', ')})` : ''}
+                    </span>
+                  )}
+                  {workStation && (
+                    <span className="commute-tag">
+                      💼 <strong>Work:</strong> {workStation.name}
+                      {workStation.lines?.length ? ` (${workStation.lines.join(', ')})` : ''}
+                    </span>
+                  )}
+                  <button
+                    className="commute-edit-link"
+                    onClick={() => setProfileModalOpen(true)}
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
 
-      <div className="status-row">
-        <div className={`status-badge ${status.connected ? 'online' : 'offline'}`}>
-          <span className="dot"></span>
-          <span>
-            <strong>Backend:</strong> {status.loading ? 'Checking...' : status.message}
-          </span>
-        </div>
+              <div className="status-row">
+                <div className={`status-badge ${status.connected ? 'online' : 'offline'}`}>
+                  <span className="dot"></span>
+                  <span>
+                    <strong>Backend:</strong> {status.loading ? 'Checking...' : status.message}
+                  </span>
+                </div>
 
-        {status.connected && (
-          <div className="status-badge info">
-            <span>
-              <strong>Subway Stations:</strong>{' '}
-              {loadingStations ? 'Loading stations...' : `${stations.length} loaded from Supabase`}
-            </span>
-          </div>
-        )}
-      </div>
+                {status.connected && (
+                  <div className="status-badge info">
+                    <span>
+                      <strong>Subway Stations:</strong>{' '}
+                      {loadingStations ? 'Loading stations...' : `${stations.length} loaded from Supabase`}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-      <div className="map-wrapper">
-        <StationMap stations={stations} apiUrl={apiUrl} />
-      </div>
+              <div className="map-wrapper">
+                <StationMap stations={stations} apiUrl={apiUrl} onStationClick={openStation} />
+              </div>
+            </>
+          }
+        />
+      </Routes>
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <ProfileModal

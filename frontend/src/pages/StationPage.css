@@ -1,0 +1,179 @@
+.station-page {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.station-page h3,
+.station-page h4 {
+  margin: 0 0 0.6rem;
+  color: var(--text-h);
+}
+
+.station-back-link {
+  color: #0039a6;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.station-hero {
+  padding: 1.25rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--code-bg);
+}
+
+.station-name {
+  margin: 0 0 0.6rem;
+  color: var(--text-h);
+}
+
+.station-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.station-ada {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.station-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.station-updated {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.station-refresh {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding: 0.2rem 0.7rem;
+  color: #0039a6;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.station-refresh:hover {
+  background: var(--code-bg);
+}
+
+.station-empty {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+}
+
+.route-bullet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.route-bullet-small {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  margin: 0 1px;
+  vertical-align: middle;
+}
+
+/* MTA marks express runs with a diamond */
+.route-bullet-express {
+  border-radius: 3px;
+  transform: rotate(45deg) scale(0.8);
+}
+
+.route-bullet-express > span {
+  transform: rotate(-45deg);
+}
+
+.direction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.direction-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.arrival-list,
+.alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.arrival-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.arrival-row:first-child {
+  border-top: none;
+}
+
+.arrival-destination {
+  flex: 1;
+  color: var(--text-h);
+}
+
+.arrival-time {
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.alert-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid #f59e0b;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+}
+
+.alert-card.alert-line {
+  border-left-color: #94a3b8;
+}
+
+.alert-card p {
+  margin: 0.4rem 0 0;
+  color: var(--text-h);
+  white-space: pre-line;
+}
+
+.alert-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #b45309;
+}
