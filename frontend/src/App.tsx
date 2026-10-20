@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Routes, Route, useNavigate } from 'react-router-dom'
+import { Routes, Route, useNavigate, useLocation, matchPath } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
 import { RequireAuth } from './components/RequireAuth'
 import { SafeCommutePage } from './pages/SafeCommutePage'
@@ -22,6 +22,10 @@ function App() {
   const apiUrl = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:8000'
   const { user, profile } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const isMapPage = !matchPath('/reports', pathname)
+    && !matchPath('/safe-commute', pathname)
+    && !matchPath('/stations/:stationId', pathname)
 
   const [status, setStatus] = useState<ConnectionStatus>({
     loading: true,
@@ -86,7 +90,8 @@ function App() {
     'Commuter'
 
   return (
-    <div className="container">
+    <div className={`container${isMapPage ? ' map-landing' : ''}`}>
+      <div className={`app-menu${isMapPage ? ' app-menu-overlay' : ''}`}>
       <header className="app-header">
         <div className="brand-block">
           <div className="title-row">
@@ -124,17 +129,8 @@ function App() {
         <NavLink to="/reports">Reports</NavLink>
         {user && <NavLink to="/safe-commute">SafeCommute</NavLink>}
       </nav>
-
-      <Routes>
-        <Route path="/safe-commute" element={
-          <RequireAuth><SafeCommutePage key={user?.id} stations={stations} /></RequireAuth>
-        } />
-        <Route path="/stations/:stationId" element={<StationPage stations={stations} />} />
-        <Route path="/reports" element={<ReportsPage stations={stations} />} />
-        <Route
-          path="*"
-          element={
-            <>
+      {isMapPage && (
+        <>
               {/* Commuter preferences strip when logged in */}
               {user && (homeStation || workStation) && (
                 <div className="commuter-strip">
@@ -177,6 +173,20 @@ function App() {
                 )}
               </div>
 
+        </>
+      )}
+      </div>
+
+      <Routes>
+        <Route path="/safe-commute" element={
+          <RequireAuth><SafeCommutePage key={user?.id} stations={stations} /></RequireAuth>
+        } />
+        <Route path="/stations/:stationId" element={<StationPage stations={stations} />} />
+        <Route path="/reports" element={<ReportsPage stations={stations} />} />
+        <Route
+          path="*"
+          element={
+            <>
               <div className="map-wrapper">
                 <StationMap stations={stations} apiUrl={apiUrl} onStationClick={openStation} />
               </div>

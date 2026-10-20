@@ -36,7 +36,11 @@ export function StationMap({ stations, apiUrl, onStationClick }: StationMapProps
       maxZoom: 18,
       maxBounds: NYC_BOUNDS,
       maxBoundsViscosity: 1.0,
+      zoomControl: false,
     })
+
+    // Keep zoom controls accessible below the menu overlay on the landing map.
+    L.control.zoom({ position: 'bottomleft' }).addTo(map)
 
     const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
