@@ -7,6 +7,7 @@ import { StationMap } from './components/StationMap'
 import { AuthModal } from './components/AuthModal'
 import { ProfileModal } from './components/ProfileModal'
 import { StationPage } from './pages/StationPage'
+import { ReportsPage } from './pages/ReportsPage'
 import { useAuth } from './context/useAuth'
 import type { Station } from './types/station'
 import './App.css'
@@ -120,6 +121,7 @@ function App() {
 
       <nav className="app-tabs" aria-label="Main navigation">
         <NavLink to="/" end>Transit map</NavLink>
+        <NavLink to="/reports">Reports</NavLink>
         {user && <NavLink to="/safe-commute">SafeCommute</NavLink>}
       </nav>
 
@@ -128,6 +130,7 @@ function App() {
           <RequireAuth><SafeCommutePage key={user?.id} stations={stations} /></RequireAuth>
         } />
         <Route path="/stations/:stationId" element={<StationPage stations={stations} />} />
+        <Route path="/reports" element={<ReportsPage stations={stations} />} />
         <Route
           path="*"
           element={
