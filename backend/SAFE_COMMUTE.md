@@ -66,19 +66,17 @@ and closes joining/leaving. Completed trips cannot be edited or cancelled.
 The API enforces creator ownership for both operations. No notification messages
 are sent; other riders see changes when their feed refreshes.
 
-Run the isolated API tests without modifying the configured database:
-
-```powershell
-.\venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-From `frontend`, check status boundaries and combined filters with:
-
-```powershell
-node --test tests/commuteTrips.test.mjs
-```
+The `backend/tests` and `frontend/tests` directories have been removed. Use the
+manual checks below to verify SafeCommute behavior.
 
 Manual check: publish as one user, join as a second user in another browser,
 refresh the first user's feed, then leave as the second user. Confirm the member
 list updates and the button switches between Join trip and Leave trip. Sign out
 and confirm the tab disappears and `/safe-commute` redirects to the map.
+
+Also verify that My trips includes both created and joined trips, and that train
+line and departure-station filters work together. As the creator, edit an upcoming
+trip and confirm its participants remain listed. Cancel a trip and confirm it
+moves to Cancelled and no longer allows joining or leaving. As another user,
+confirm Edit trip and Cancel trip are unavailable. Check that trips move from
+Upcoming to Meeting now at the meetup start, then to Completed at the window end.
