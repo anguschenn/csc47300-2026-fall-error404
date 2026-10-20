@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { RequireAuth } from './components/RequireAuth'
 import { SafeCommutePage } from './pages/SafeCommutePage'
 import { StationMap } from './components/StationMap'
+import { MovableMenu } from './components/MovableMenu'
 import { AuthModal } from './components/AuthModal'
 import { ProfileModal } from './components/ProfileModal'
 import { StationPage } from './pages/StationPage'
@@ -91,7 +92,7 @@ function App() {
 
   return (
     <div className={`container${isMapPage ? ' map-landing' : ''}`}>
-      <div className={`app-menu${isMapPage ? ' app-menu-overlay' : ''}`}>
+      <MovableMenu overlay={isMapPage}>
       <header className="app-header">
         <div className="brand-block">
           <div className="title-row">
@@ -175,7 +176,7 @@ function App() {
 
         </>
       )}
-      </div>
+      </MovableMenu>
 
       <Routes>
         <Route path="/safe-commute" element={

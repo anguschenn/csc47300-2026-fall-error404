@@ -212,6 +212,11 @@
 .map-landing .station-map-container { min-height: 0; border-radius: 0; }
 .app-menu-overlay { position: absolute; top: max(1rem, env(safe-area-inset-top)); left: max(1rem, env(safe-area-inset-left)); right: max(1rem, env(safe-area-inset-right)); width: auto; max-width: 640px; margin-inline: auto; max-height: calc(100dvh - 6rem); overflow-y: auto; padding: .85rem 1rem; box-sizing: border-box; background: var(--bg); background: color-mix(in srgb, var(--bg) 94%, transparent); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 30px #0003; backdrop-filter: blur(12px); z-index: 1000; }
 .app-menu-overlay .app-header { margin-bottom: .65rem; gap: .65rem; }
+.menu-drag-handle { display: flex; align-items: center; justify-content: center; gap: .3rem; width: 100%; margin: -.25rem 0 .4rem; padding: .15rem; border: 0; border-radius: 5px; background: transparent; color: var(--text); font: inherit; font-size: .7rem; cursor: grab; touch-action: none; user-select: none; }
+.menu-drag-handle:hover { background: var(--code-bg); color: var(--text-h); }
+.menu-drag-handle:focus-visible { outline: 2px solid #91b5ff; outline-offset: 2px; }
+.menu-dragging .menu-drag-handle { cursor: grabbing; }
+.menu-dragging { user-select: none; }
 .app-menu-overlay .title-row h1 { font-size: 1.65rem; line-height: 1.2; }
 .app-menu-overlay .subtitle { font-size: .8rem; line-height: 1.4; }
 .app-menu-overlay .sign-in-btn { font-size: .8rem; padding: .5rem .85rem; }
