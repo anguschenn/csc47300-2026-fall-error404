@@ -57,7 +57,6 @@ export function CommuteTripFilters(props: Props) {
             {props.departureStations.map((station) => <option key={station.id} value={station.id}>{station.name} ({station.id})</option>)}
           </select>
         </label>
-        <button type="button" className="sc-clear-filters" onClick={props.onReset}>Clear filters</button>
       </div>
       <div className="sc-line-filters" role="group" aria-label="Filter trips by train line">
         <button type="button" className={!props.line ? 'active' : ''} aria-pressed={!props.line} onClick={() => props.onLineChange('')}>
@@ -71,6 +70,7 @@ export function CommuteTripFilters(props: Props) {
       </div>
       <div className="sc-filter-footer">
         <label className="sc-my-trips"><input type="checkbox" checked={props.myTripsOnly} onChange={(event) => props.onMyTripsChange(event.target.checked)} />My trips</label>
+        <button type="button" className="sc-clear-filters" onClick={props.onReset}>Clear filters</button>
       </div>
     </section>
   )
