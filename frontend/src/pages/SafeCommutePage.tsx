@@ -23,6 +23,7 @@ export function SafeCommutePage({ stations }: { stations: Station[] }) {
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [trainLine, setTrainLine] = useState('')
+  const [filterLine, setFilterLine] = useState('')
   const [departure, setDeparture] = useState('')
   const [destination, setDestination] = useState('')
   const [meetup, setMeetup] = useState('')
@@ -47,8 +48,10 @@ export function SafeCommutePage({ stations }: { stations: Station[] }) {
     try {
       const data = await commuteService.list(token)
       if (current === generation.current) {
+        const refreshedAt = Date.now()
         setTrips(data)
-        setNow(Date.now())
+        setNow(refreshedAt)
+        setFilterLine((selected) => data.some((trip) => trip.train_line === selected && Date.parse(trip.meetup_end_at) > refreshedAt) ? selected : '')
         setError('')
       }
     } catch (err) {
@@ -101,6 +104,7 @@ export function SafeCommutePage({ stations }: { stations: Station[] }) {
         .sort((a, b) => Date.parse(a.meetup_at) - Date.parse(b.meetup_at)))
       setDeparture('')
       setTrainLine('')
+      setFilterLine('')
       setDestination('')
       setMeetup('')
       setMeetupEnd('')
@@ -135,6 +139,10 @@ export function SafeCommutePage({ stations }: { stations: Station[] }) {
 
   const creatorName = profile?.display_name || profile?.full_name || user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'Commuter'
   const upcoming = trips.filter((trip) => Date.parse(trip.meetup_end_at) > now)
+  const activeLines = [...new Set(upcoming.flatMap((trip) => trip.train_line ? [trip.train_line] : []))]
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+  const activeFilterLine = activeLines.includes(filterLine) ? filterLine : ''
+  const visibleTrips = upcoming.filter((trip) => !activeFilterLine || trip.train_line === activeFilterLine)
 
   return (
     <main className="safe-commute">
@@ -175,19 +183,33 @@ export function SafeCommutePage({ stations }: { stations: Station[] }) {
             <input id="sc-meetup" type="datetime-local" required value={meetup} onChange={(event) => setMeetup(event.target.value)} />
             <label htmlFor="sc-meetup-end">Meetup window ends</label>
             <input id="sc-meetup-end" type="datetime-local" required value={meetupEnd} min={meetup || undefined} onChange={(event) => setMeetupEnd(event.target.value)} />
-            <small>Enter times in your device’s local time zone. Trip cards show New York time.</small>
+            <small>Enter times in your device’s local time zone. Trip cards shown in Eastern Standard Time.</small>
             {!stations.length && <p role="status">Stations are unavailable. Check the backend connection and refresh the page.</p>}
             <button className="sc-primary" type="submit" disabled={busy !== null || !trainLine || !stations.length}>{busy === 'publish' ? 'Publishing…' : 'Publish trip'}</button>
           </form>
         </section>
 
         <section className="sc-feed" aria-labelledby="upcoming-trips-heading" aria-busy={loading}>
-          <h3 id="upcoming-trips-heading">Upcoming trips <span className="sc-count">{upcoming.length}</span></h3>
-          <p className="sc-feed-hint">Memberships refresh every 15 seconds.</p>
+          <h3 id="upcoming-trips-heading">Upcoming trips <span className="sc-count">{visibleTrips.length}</span></h3>
+          {upcoming.length > 0 && (
+            <div className="sc-line-filters" role="group" aria-label="Filter trips by train line">
+              <button type="button" className={!activeFilterLine ? 'active' : ''} aria-pressed={!activeFilterLine} onClick={() => setFilterLine('')}>
+                All lines <span className="sc-filter-count">{upcoming.length}</span>
+              </button>
+              {activeLines.map((line) => (
+                <button key={line} type="button" className={activeFilterLine === line ? 'active' : ''} aria-pressed={activeFilterLine === line} onClick={() => setFilterLine(line)}>
+                  <TrainLineBullet line={line} />
+                  <span>{line} train</span>
+                  <span className="sc-filter-count">{upcoming.filter((trip) => trip.train_line === line).length}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {activeFilterLine && <p className="sc-filter-summary" role="status">Showing {visibleTrips.length} of {upcoming.length} active trips.</p>}
           {loading ? <p role="status">Loading upcoming trips…</p> : upcoming.length === 0 && (
             <div className="sc-empty">{error ? 'Trips could not be loaded. Use Refresh trips to try again.' : 'No upcoming trips yet. Publish a trip to start a commute group.'}</div>
           )}
-          {upcoming.map((trip) => {
+          {visibleTrips.map((trip) => {
             const joined = trip.participants.some((participant) => participant.id === user?.id)
             return (
               <article className="sc-card" key={trip.id}>

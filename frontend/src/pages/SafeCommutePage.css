@@ -39,3 +39,10 @@
 .sc-card-line { margin-top: 1rem; }
 .sc-legacy-line { font-size: .75rem; margin-top: .75rem; }
 .sc-publish select:disabled { opacity: .6; cursor: not-allowed; }
+
+.sc-line-filters { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+.sc-line-filters button { display: inline-flex; align-items: center; gap: .4rem; border: 1px solid var(--border); border-radius: 20px; background: var(--bg); color: var(--text-h); padding: .3rem .75rem; font: inherit; font-size: .78rem; cursor: pointer; }
+.sc-line-filters button.active { background: #0039a6; border-color: #0039a6; color: #fff; }
+.sc-line-filters .sc-train-bullet { width: 24px; height: 24px; }
+.sc-filter-count { font-size: .7rem; opacity: .8; font-variant-numeric: tabular-nums; }
+.sc-filter-summary { font-size: .8rem; margin-bottom: .6rem; }
