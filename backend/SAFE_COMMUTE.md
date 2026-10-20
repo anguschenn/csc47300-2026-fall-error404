@@ -66,9 +66,6 @@ and closes joining/leaving. Completed trips cannot be edited or cancelled.
 The API enforces creator ownership for both operations. No notification messages
 are sent; other riders see changes when their feed refreshes.
 
-The `backend/tests` and `frontend/tests` directories have been removed. Use the
-manual checks below to verify SafeCommute behavior.
-
 Manual check: publish as one user, join as a second user in another browser,
 refresh the first user's feed, then leave as the second user. Confirm the member
 list updates and the button switches between Join trip and Leave trip. Sign out
