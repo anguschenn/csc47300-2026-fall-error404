@@ -22,6 +22,7 @@ class CommuteTrip(Base):
     destination_station_id = Column(String, ForeignKey("stations.id"), nullable=False)
     meetup_at = Column(DateTime(timezone=True), nullable=False, index=True)
     meetup_end_at = Column(DateTime(timezone=True), nullable=False)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     creator = relationship("Profile")

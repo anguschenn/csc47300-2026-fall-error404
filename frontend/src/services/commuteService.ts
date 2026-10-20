@@ -28,4 +28,8 @@ export const commuteService = {
   }),
   setMembership: (token: string, tripId: string, joining: boolean) =>
     request<CommuteTrip>(token, `/${tripId}/membership`, { method: joining ? 'PUT' : 'DELETE' }),
+  update: (token: string, tripId: string, trip: CommuteTripCreate) =>
+    request<CommuteTrip>(token, `/${tripId}`, { method: 'PUT', body: JSON.stringify(trip) }),
+  cancel: (token: string, tripId: string) =>
+    request<CommuteTrip>(token, `/${tripId}/cancel`, { method: 'POST' }),
 }

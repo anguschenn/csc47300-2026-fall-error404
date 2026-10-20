@@ -46,3 +46,26 @@
 .sc-line-filters .sc-train-bullet { width: 24px; height: 24px; }
 .sc-filter-count { font-size: .7rem; opacity: .8; font-variant-numeric: tabular-nums; }
 .sc-filter-summary { font-size: .8rem; margin-bottom: .6rem; }
+
+.sc-trip-fields { display: flex; flex-direction: column; gap: .55rem; border: 0; padding: 0; margin: 0; min-width: 0; }
+.sc-filter-box { border: 1px solid var(--border); border-radius: 14px; padding: 1rem; background: var(--code-bg); margin-bottom: 1rem; }
+.sc-status-tabs { display: flex; flex-wrap: wrap; gap: .35rem; border-bottom: 1px solid var(--border); padding-bottom: .8rem; margin-bottom: .9rem; }
+.sc-status-tabs button { border: 1px solid transparent; border-radius: 8px; padding: .5rem .6rem; background: var(--bg); color: var(--text-h); font: inherit; font-size: .75rem; cursor: pointer; flex: 1 1 auto; }
+.sc-status-tabs button.active { background: #0039a6; color: white; border-color: #0039a6; }
+.sc-filter-options { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-bottom: 1rem; }
+.sc-my-trips { display: inline-flex; align-items: center; gap: .45rem; font-size: .85rem; color: var(--text-h); font-weight: 600; cursor: pointer; }
+.sc-my-trips input { width: 18px; height: 18px; accent-color: #0039a6; }
+.sc-filter-footer { display: flex; justify-content: flex-end; margin-top: .9rem; }
+.sc-departure-filter { display: flex; flex: 1 1 180px; flex-direction: column; gap: .25rem; font-size: .75rem; color: var(--text-h); min-width: 0; }
+.sc-departure-filter select { width: 100%; min-width: 0; padding: .5rem; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text-h); font: inherit; font-size: .8rem; }
+.sc-clear-filters { border: 0; background: transparent; padding: .25rem; color: var(--text-h); font: inherit; font-size: .75rem; text-decoration: underline; cursor: pointer; }
+.sc-filter-box .sc-line-filters { margin-bottom: 0; }
+.sc-trip-status { display: inline-block; font-size: .7rem; font-weight: 600; padding: .15rem .5rem; border-radius: 20px; margin-top: .6rem; background: var(--code-bg); color: var(--text-h); }
+.sc-trip-status-meeting_now { background: #00933c22; border: 1px solid #00933c66; }
+.sc-trip-status-cancelled { background: #dc262618; border: 1px solid #dc262666; }
+.sc-trip-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.sc-danger { border: 1px solid #bc3d3d; border-radius: 8px; background: var(--bg); color: var(--text-h); padding: .65rem 1rem; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.sc-cancel-confirm { border: 1px solid #bc3d3d; border-radius: 9px; padding: .8rem; margin-top: 1rem; }
+.sc-cancel-confirm p { font-size: .8rem; margin-bottom: .6rem; }
+.sc-cancel-confirm button { margin: .25rem .4rem .25rem 0; }
+@media (max-width: 480px) { .sc-status-tabs { display: grid; grid-template-columns: 1fr 1fr; } }

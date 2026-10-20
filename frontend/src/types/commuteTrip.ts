@@ -11,8 +11,12 @@ export interface CommuteTrip {
   destination_station: { id: string; name: string }
   meetup_at: string
   meetup_end_at: string
+  cancelled_at: string | null
+  status: TripStatus
   participants: CommutePerson[]
 }
+
+export type TripStatus = 'upcoming' | 'meeting_now' | 'completed' | 'cancelled'
 
 export interface CommuteTripCreate {
   train_line: string

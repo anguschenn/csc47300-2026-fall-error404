@@ -36,6 +36,35 @@ def person(profile):
     return {"id": profile.id, "display_name": profile.display_name or profile.full_name or "Commuter"}
 
 
+def trip_status(trip, now=None):
+    now = now or datetime.now(timezone.utc)
+    if trip.cancelled_at is not None:
+        return "cancelled"
+    if now >= trip.meetup_end_at:
+        return "completed"
+    if now >= trip.meetup_at:
+        return "meeting_now"
+    return "upcoming"
+
+
+def validate_trip_stations(data, db):
+    for station_id in (data.departure_station_id, data.destination_station_id):
+        station = db.get(Station, station_id)
+        if not station:
+            raise HTTPException(400, "One of the selected stations no longer exists.")
+        if data.train_line not in {line.strip().upper() for line in (station.lines or [])}:
+            raise HTTPException(400, f"{station.name} is not served by the {data.train_line} train. Choose both stations on the selected line.")
+
+
+def creator_trip(trip_id, current_user, db):
+    trip = db.query(CommuteTrip).filter(CommuteTrip.id == trip_id).with_for_update().first()
+    if not trip:
+        raise HTTPException(404, "Trip not found.")
+    if str(trip.creator_id) != current_user.id:
+        raise HTTPException(403, "Only the trip creator can edit or cancel this trip.")
+    return trip
+
+
 def trip_response(trip):
     return {
         "id": trip.id,
@@ -45,6 +74,8 @@ def trip_response(trip):
         "destination_station": trip.destination_station,
         "meetup_at": trip.meetup_at,
         "meetup_end_at": trip.meetup_end_at,
+        "cancelled_at": trip.cancelled_at,
+        "status": trip_status(trip),
         "participants": [person(member.profile) for member in sorted(
             trip.members, key=lambda member: (member.joined_at, str(member.user_id))
         )],
@@ -61,7 +92,7 @@ def list_trips(
         selectinload(CommuteTrip.departure_station),
         selectinload(CommuteTrip.destination_station),
         selectinload(CommuteTrip.members).selectinload(CommuteTripMember.profile),
-    ).filter(CommuteTrip.meetup_end_at > datetime.now(timezone.utc)).order_by(
+    ).order_by(
         CommuteTrip.meetup_at, CommuteTrip.id
     ).all()
     return [trip_response(trip) for trip in trips]
@@ -73,12 +104,7 @@ def publish_trip(
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    for station_id in (data.departure_station_id, data.destination_station_id):
-        station = db.get(Station, station_id)
-        if not station:
-            raise HTTPException(400, "One of the selected stations no longer exists.")
-        if data.train_line not in {line.strip().upper() for line in (station.lines or [])}:
-            raise HTTPException(400, f"{station.name} is not served by the {data.train_line} train. Choose both stations on the selected line.")
+    validate_trip_stations(data, db)
     profile = commuter_profile(current_user, db)
     trip = CommuteTrip(creator_id=profile.id, **data.model_dump())
     db.add(trip)
@@ -90,12 +116,48 @@ def publish_trip(
     return trip_response(trip)
 
 
+@router.put("/{trip_id}", response_model=CommuteTripResponse)
+def update_trip(
+    trip_id: UUID,
+    data: CommuteTripCreate,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    trip = creator_trip(trip_id, current_user, db)
+    if trip_status(trip) != "upcoming":
+        raise HTTPException(409, "Only upcoming trips can be edited. Refresh to see this trip's current status.")
+    validate_trip_stations(data, db)
+    for field, value in data.model_dump().items():
+        setattr(trip, field, value)
+    db.commit()
+    db.refresh(trip)
+    return trip_response(trip)
+
+
+@router.post("/{trip_id}/cancel", response_model=CommuteTripResponse)
+def cancel_trip(
+    trip_id: UUID,
+    current_user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    trip = creator_trip(trip_id, current_user, db)
+    if trip_status(trip) == "completed":
+        raise HTTPException(409, "Completed trips cannot be cancelled.")
+    if trip.cancelled_at is None:
+        trip.cancelled_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(trip)
+    return trip_response(trip)
+
+
 def change_membership(trip_id, current_user, db, joining):
     profile = commuter_profile(current_user, db)
     # Lock the parent row so simultaneous joins cannot create duplicate memberships.
     trip = db.query(CommuteTrip).filter(CommuteTrip.id == trip_id).with_for_update().first()
     if not trip:
         raise HTTPException(404, "Trip not found.")
+    if trip.cancelled_at is not None:
+        raise HTTPException(409, "This trip has been cancelled. Membership is closed.")
     if trip.meetup_end_at <= datetime.now(timezone.utc):
         raise HTTPException(409, "This meetup window has ended. Refresh the trip list.")
     member = db.get(CommuteTripMember, (trip.id, profile.id))

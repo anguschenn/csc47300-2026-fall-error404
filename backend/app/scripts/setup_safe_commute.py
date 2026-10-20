@@ -14,6 +14,7 @@ def setup_safe_commute():
         CommuteTripMember.__table__.create(connection, checkfirst=True)
         # Add line selection to existing installations without changing published trips.
         connection.execute(text("ALTER TABLE commute_trips ADD COLUMN IF NOT EXISTS train_line VARCHAR(16)"))
+        connection.execute(text("ALTER TABLE commute_trips ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ"))
         # Access goes through authenticated FastAPI endpoints using the backend DB role.
         # No direct Supabase anon/authenticated access policies are granted.
         connection.execute(text("ALTER TABLE commute_trips ENABLE ROW LEVEL SECURITY"))

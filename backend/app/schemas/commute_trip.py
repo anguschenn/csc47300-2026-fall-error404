@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from uuid import UUID
+from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -48,4 +49,6 @@ class CommuteTripResponse(BaseModel):
     destination_station: CommuteStation
     meetup_at: datetime
     meetup_end_at: datetime
+    cancelled_at: datetime | None = None
+    status: Literal["upcoming", "meeting_now", "completed", "cancelled"]
     participants: list[CommutePerson]

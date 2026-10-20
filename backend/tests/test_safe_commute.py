@@ -19,6 +19,8 @@ from app.models.commute_trip import CommuteTrip, CommuteTripMember
 from app.models.profile import Profile
 from app.models.station import Station
 from app.schemas.profile import CurrentUser
+from app.api.v1.commute_trips import trip_status
+from types import SimpleNamespace
 
 
 @compiles(ARRAY, "sqlite")
@@ -28,9 +30,9 @@ def compile_test_array(element, compiler, **kwargs):
 
 def restore_timezone(target, context, attrs=None):
     # SQLite discards timezone information; PostgreSQL preserves these UTC instants.
-    for field in ("meetup_at", "meetup_end_at"):
+    for field in ("meetup_at", "meetup_end_at", "cancelled_at"):
         value = getattr(target, field)
-        if value.tzinfo is None:
+        if value is not None and value.tzinfo is None:
             setattr(target, field, value.replace(tzinfo=timezone.utc))
 
 
@@ -119,14 +121,16 @@ class SafeCommuteTests(unittest.TestCase):
                 response = self.client.post("/api/v1/commute-trips", json={**self.payload, **changes})
                 self.assertEqual(response.status_code, expected, response.text)
 
-    def test_expired_trips_are_hidden_and_membership_is_closed(self):
+    def test_expired_trips_are_completed_and_membership_is_closed(self):
         trip = self.publish()
         with Session(self.engine) as session:
             stored = session.get(CommuteTrip, UUID(trip["id"]))
             stored.meetup_at = datetime.now(timezone.utc) - timedelta(hours=2)
             stored.meetup_end_at = datetime.now(timezone.utc) - timedelta(hours=1)
             session.commit()
-        self.assertEqual(self.client.get("/api/v1/commute-trips").json(), [])
+        completed = self.client.get("/api/v1/commute-trips").json()
+        self.assertEqual(completed[0]["id"], trip["id"])
+        self.assertEqual(completed[0]["status"], "completed")
         endpoint = f'/api/v1/commute-trips/{trip["id"]}/membership'
         self.assertEqual(self.client.put(endpoint).status_code, 409)
         self.assertEqual(self.client.delete(endpoint).status_code, 409)
@@ -162,10 +166,96 @@ class SafeCommuteTests(unittest.TestCase):
     def test_all_endpoints_require_login(self):
         del app.dependency_overrides[get_current_user]
         endpoint = f"/api/v1/commute-trips/{uuid4()}/membership"
-        for method, path in (("GET", "/api/v1/commute-trips"), ("POST", "/api/v1/commute-trips"), ("PUT", endpoint), ("DELETE", endpoint)):
+        trip_endpoint = f"/api/v1/commute-trips/{uuid4()}"
+        for method, path in (("GET", "/api/v1/commute-trips"), ("POST", "/api/v1/commute-trips"), ("PUT", endpoint), ("DELETE", endpoint), ("PUT", trip_endpoint), ("POST", trip_endpoint + "/cancel")):
             with self.subTest(method=method):
-                response = self.client.request(method, path, json=self.payload if method == "POST" else None)
+                response = self.client.request(method, path, json=self.payload if method in ("POST", "PUT") else None)
                 self.assertEqual(response.status_code, 401, response.text)
+
+    def test_status_boundaries_and_cancellation_precedence(self):
+        start = datetime.now(timezone.utc)
+        trip = SimpleNamespace(meetup_at=start, meetup_end_at=start + timedelta(minutes=15), cancelled_at=None)
+        self.assertEqual(trip_status(trip, start - timedelta(seconds=1)), "upcoming")
+        self.assertEqual(trip_status(trip, start), "meeting_now")
+        self.assertEqual(trip_status(trip, trip.meetup_end_at), "completed")
+        trip.cancelled_at = start
+        self.assertEqual(trip_status(trip, trip.meetup_end_at + timedelta(days=1)), "cancelled")
+
+    def test_creator_can_edit_and_membership_is_preserved(self):
+        trip = self.publish()
+        self.current_user = self.rider
+        self.client.put(f'/api/v1/commute-trips/{trip["id"]}/membership')
+        self.current_user = self.creator
+        changes = {**self.payload, "train_line": "4", "destination_station_id": "C"}
+        response = self.client.put(f'/api/v1/commute-trips/{trip["id"]}', json=changes)
+        self.assertEqual(response.status_code, 200, response.text)
+        updated = response.json()
+        self.assertEqual(updated["train_line"], "4")
+        self.assertEqual(updated["destination_station"]["id"], "C")
+        self.assertEqual(updated["creator"]["id"], self.creator.id)
+        self.assertEqual(len(updated["participants"]), 2)
+        self.assertEqual(updated["status"], "upcoming")
+
+    def test_other_riders_cannot_edit_or_cancel(self):
+        trip = self.publish()
+        self.current_user = self.rider
+        endpoint = f'/api/v1/commute-trips/{trip["id"]}'
+        self.assertEqual(self.client.put(endpoint, json=self.payload).status_code, 403)
+        self.assertEqual(self.client.post(endpoint + "/cancel").status_code, 403)
+        self.assertEqual(self.client.get("/api/v1/commute-trips").json()[0]["status"], "upcoming")
+
+    def test_cancel_retains_trip_and_riders_and_is_idempotent(self):
+        trip = self.publish()
+        self.current_user = self.rider
+        membership = f'/api/v1/commute-trips/{trip["id"]}/membership'
+        self.client.put(membership)
+        self.current_user = self.creator
+        endpoint = f'/api/v1/commute-trips/{trip["id"]}'
+        cancelled = self.client.post(endpoint + "/cancel")
+        self.assertEqual(cancelled.status_code, 200, cancelled.text)
+        self.assertEqual(cancelled.json()["status"], "cancelled")
+        self.assertEqual(len(cancelled.json()["participants"]), 2)
+        repeated = self.client.post(endpoint + "/cancel").json()
+        self.assertEqual(repeated["cancelled_at"], cancelled.json()["cancelled_at"])
+        self.assertEqual(self.client.get("/api/v1/commute-trips").json()[0]["status"], "cancelled")
+        self.assertEqual(self.client.put(endpoint, json=self.payload).status_code, 409)
+        self.assertEqual(self.client.put(membership).status_code, 409)
+        self.assertEqual(self.client.delete(membership).status_code, 409)
+
+    def test_edit_checks_line_membership_and_future_times(self):
+        trip = self.publish()
+        endpoint = f'/api/v1/commute-trips/{trip["id"]}'
+        self.assertEqual(self.client.put(endpoint, json={**self.payload, "destination_station_id": "C"}).status_code, 400)
+        self.assertEqual(self.client.put(endpoint, json={**self.payload, "meetup_at": (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()}).status_code, 422)
+        self.assertEqual(self.client.get("/api/v1/commute-trips").json()[0]["destination_station"]["id"], "B")
+
+    def test_meeting_trip_cannot_be_edited_but_can_be_cancelled(self):
+        trip = self.publish()
+        with Session(self.engine) as session:
+            stored = session.get(CommuteTrip, UUID(trip["id"]))
+            stored.meetup_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+            stored.meetup_end_at = datetime.now(timezone.utc) + timedelta(minutes=14)
+            session.commit()
+        endpoint = f'/api/v1/commute-trips/{trip["id"]}'
+        self.assertEqual(self.client.get("/api/v1/commute-trips").json()[0]["status"], "meeting_now")
+        self.assertEqual(self.client.put(endpoint, json=self.payload).status_code, 409)
+        self.assertEqual(self.client.post(endpoint + "/cancel").status_code, 200)
+
+    def test_completed_trip_cannot_be_edited_or_cancelled(self):
+        trip = self.publish()
+        with Session(self.engine) as session:
+            stored = session.get(CommuteTrip, UUID(trip["id"]))
+            stored.meetup_at = datetime.now(timezone.utc) - timedelta(hours=2)
+            stored.meetup_end_at = datetime.now(timezone.utc) - timedelta(hours=1)
+            session.commit()
+        endpoint = f'/api/v1/commute-trips/{trip["id"]}'
+        self.assertEqual(self.client.put(endpoint, json=self.payload).status_code, 409)
+        self.assertEqual(self.client.post(endpoint + "/cancel").status_code, 409)
+
+    def test_unknown_edit_and_cancel_return_404(self):
+        endpoint = f"/api/v1/commute-trips/{uuid4()}"
+        self.assertEqual(self.client.put(endpoint, json=self.payload).status_code, 404)
+        self.assertEqual(self.client.post(endpoint + "/cancel").status_code, 404)
 
 
 if __name__ == "__main__":

@@ -43,17 +43,39 @@ existing station data; it does not guarantee a particular train's stopping patte
 or service at the requested time.
 
 For an existing database, run the setup command again before restarting FastAPI.
-It adds only the nullable `train_line` column to `commute_trips`. Earlier trips
+It adds the nullable `train_line` and `cancelled_at` columns to `commute_trips`. Earlier trips
 remain visible with a line-not-specified note; no line is guessed for them.
 
 Each trip's participants form its commute group. The feed refreshes every 15
-seconds and offers a manual refresh button. Trips disappear from the upcoming
-feed once the meetup window ends; records are retained in the database.
+seconds and offers a manual refresh button. Status tabs divide trips into:
+
+- **Upcoming:** the meetup window has not started.
+- **Meeting now:** the window has started but has not ended.
+- **Completed:** the window has ended.
+- **Cancelled:** the creator cancelled the trip; this takes priority over its time.
+
+The filter box combines status, train line, departure station, and **My trips**.
+My trips includes trips the current user created or joined, even when the creator
+has left their own trip. Line and departure options come from the trips in the
+selected status and ownership scope. Completed and cancelled records are retained.
+
+Creators can edit upcoming trips using **Edit trip**, which fills the existing
+form. Changes preserve all participants. Creators can cancel upcoming or meeting
+trips after confirming in the card. Cancellation preserves the trip and group,
+and closes joining/leaving. Completed trips cannot be edited or cancelled.
+The API enforces creator ownership for both operations. No notification messages
+are sent; other riders see changes when their feed refreshes.
 
 Run the isolated API tests without modifying the configured database:
 
 ```powershell
 .\venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+From `frontend`, check status boundaries and combined filters with:
+
+```powershell
+node --test tests/commuteTrips.test.mjs
 ```
 
 Manual check: publish as one user, join as a second user in another browser,
